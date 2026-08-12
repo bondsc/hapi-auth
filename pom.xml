@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.microsoft.hlspso</groupId>
+    <artifactId>hapi-auth</artifactId>
+    <version>0.1.0</version>
+    <packaging>jar</packaging>
+
+    <name>HAPI FHIR Multi-Issuer Auth Extension</name>
+    <description>
+        Spring Security + HAPI AuthorizationInterceptor add-on for the
+        hapiproject/hapi JPA starter image. Adds multi-issuer JWT
+        validation (Microsoft Entra + SMART on FHIR backend services)
+        and scope-based authorization for system/*.read and system/*.write.
+    </description>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!--
+            Versions match what the PINNED hapiproject/hapi base image ships
+            (see the digest in ../hapi-auth/Dockerfile and its WEB-INF/lib):
+            spring-boot 3.5.9 / spring-framework 6.2.x. The upstream image
+            anomalously downgrades spring-security to 6.3.9, which is missing
+            APIs (e.g. PathPatternRequestMatcher) that spring-boot 3.5.9's
+            security auto-configuration requires. We therefore let the
+            spring-boot-dependencies BOM pick the correct spring-security
+            (6.5.x) below and bundle the FULL, consistent set into WEB-INF/lib,
+            stripping the base image's 6.3.9 jars in the Dockerfile.
+        -->
+        <spring.boot.version>3.5.9</spring.boot.version>
+        <hapi.fhir.version>7.4.5</hapi.fhir.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring.boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <!--
+            Provided by HAPI runtime — do not bundle.
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!--
+            spring-security — the base image ships an anomalous 6.3.9 that is
+            incompatible with its own spring-boot 3.5.9 security autoconfig.
+            We bundle the COMPLETE, BOM-managed (6.5.x) set into WEB-INF/lib and
+            strip the base image's 6.3.9 jars in the Dockerfile so there is a
+            single, self-consistent spring-security on the classpath. Versions
+            are inherited from the spring-boot-dependencies BOM above.
+        -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-config</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-oauth2-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-oauth2-jose</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-oauth2-resource-server</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>ca.uhn.hapi.fhir</groupId>
+            <artifactId>hapi-fhir-server</artifactId>
+            <version>${hapi.fhir.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>ca.uhn.hapi.fhir</groupId>
+            <artifactId>hapi-fhir-base</artifactId>
+            <version>${hapi.fhir.version}</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>hapi-auth</finalName>
+        <plugins>
+            <!--
+                Copy compile-scope dependencies (the spring-security oauth2
+                jars above) into target/lib so the Dockerfile can drop them
+                into WEB-INF/lib alongside hapi-auth.jar.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.6.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-runtime-deps</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                            <includeScope>runtime</includeScope>
+                            <excludeTransitive>true</excludeTransitive>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

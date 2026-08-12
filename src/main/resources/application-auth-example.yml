@@ -1,0 +1,28 @@
+# Example configuration — copy into HAPI's application.yaml or pass via env vars.
+# All keys translate to HAPI_AUTH_* environment variables, e.g.
+#   HAPI_AUTH_ENABLED=true
+#   HAPI_AUTH_ISSUERS_0_ID=entra-contoso
+#   HAPI_AUTH_ISSUERS_0_ISSUERURI=https://login.microsoftonline.com/<tenantId>/v2.0
+#   HAPI_AUTH_ISSUERS_0_AUDIENCES_0=api://hapi-fhir
+#   HAPI_AUTH_ISSUERS_0_FLAVOR=ENTRA
+
+hapi:
+  auth:
+    enabled: true
+    allow-anonymous-metadata: true
+    issuers:
+      # ── Microsoft Entra (single tenant) ─────────────────────────────
+      - id: entra-contoso
+        issuer-uri: https://login.microsoftonline.com/REPLACE_TENANT_ID/v2.0
+        audiences:
+          - api://hapi-fhir
+        flavor: ENTRA
+
+      # ── SMART on FHIR backend services (one customer) ──────────────
+      - id: smart-customerA
+        issuer-uri: https://auth.customerA.example/fhir
+        jwks-uri: https://auth.customerA.example/fhir/.well-known/jwks.json
+        audiences:
+          - https://hapi-fhir.example/fhir
+        flavor: SMART
+        tenant: customerA

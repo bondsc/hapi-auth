@@ -1,0 +1,2 @@
+com.microsoft.hlspso.hapiauth.HapiAuthAutoConfiguration
+com.microsoft.hlspso.hapiauth.HapiNoAuthAutoConfiguration
