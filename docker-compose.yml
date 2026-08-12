@@ -1,0 +1,5 @@
+services:
+  hapi-fhir:
+    build: .
+    container_name: hapi-auth
+    restart: on-failure
