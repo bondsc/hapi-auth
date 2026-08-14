@@ -43,5 +43,6 @@ USER root
 # interceptor beans on startup when hapi.auth.enabled=true.
 RUN rm -f /usr/local/tomcat/webapps/ROOT.war
 COPY --from=warpack --chown=65532:65532 /work/ROOT /usr/local/tomcat/webapps/ROOT
+COPY src/main/resources/content/logo.jpg /usr/local/tomcat/webapps/ROOT/img/logo.jpg
 USER 65532
 
